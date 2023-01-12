@@ -9,6 +9,8 @@ var path = require('path');
 
 app.set('view engine', 'ejs'); 
 
+const bcrypt = require('bcrypt');
+
 var Pseudo = require('./models/pseudo');
 var Contact = require('./models/Contact');
 
@@ -136,6 +138,7 @@ app.post('/new-contact', function(req, res){
 //MY BLOG
 
 var Post = require('./models/Post');
+const User = require('./models/User');
 
 app.get('/blog', function(req, res){
    res.render('Blog');
@@ -193,9 +196,49 @@ app.delete('/allposts/delete/:id', function(req, res){
     }).catch(err => { console.log(err) });
 });
 
+// Login 
+// Register
+app.post("/api/signup", function(req, res){
+    const Data = new User ({
+        user: req.body.user,
+        email: req.body.email,
+        password:bcrypt.hashSync(req.body.password,10),
+        admin: false 
+    })
+    Data.save().then(() => {
+        res.redirect("/");
+    }).catch(err => console.log(err));
+})
 
+app.get ("/signup", function(req, res){
+    res.render("Signup");
+})
 
+// Connexion
+
+app.post("/api/signin", function(req, res){
+   User.findOne({ 
+    email : req.body.email
+}).then(user => {
+    if(!user){
+        res.status(404).send("email Invalid !");
+    }
+    
+    if (!bcrypt.compareSync(req.body.password,user.password)){
+        res.status(404).send("Password Invalid !");
+    }
+        res.render("Userpage",{data:user});
+      
+    }).catch(err=>{console.log(err)})
+   });
+app.get("/login", function(req, res){
+    res.render("Signin");
+});
 
 var server = app.listen(5000, function(){
     console.log("NodeJS listening on port 5000");
+});
+
+app.get("/login", function(req, res){
+    res.render("Signin");
 })
